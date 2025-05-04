@@ -1,84 +1,148 @@
-import React, { useState } from 'react';
-import { auth } from '@/lib/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from "react";
+import { auth, googleProvider } from "@/lib/firebase";
+import { signInWithPopup } from "firebase/auth";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { Button } from "./ui/button";
+import { Label } from "./ui/label";
+import { Input } from "./ui/input";
+import { FcGoogle } from "react-icons/fc";
+import { LuChartNoAxesCombined } from "react-icons/lu";
 
 const Signup = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    setError('');
+    setError("");
 
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      navigate('/dashboard');
-      console.log('User signed up successfully');
+      navigate("/dashboard");
+      console.log("User signed up successfully");
     } catch (error) {
-      console.error('Error signing up:', error);
+      console.error("Error signing up:", error);
       setError(`Failed to sign up: ${error.message}`);
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    try {
+      await signInWithPopup(auth, googleProvider);
+      navigate("/dashboard");
+      console.log("User logged in with Google successfully");
+    } catch (error) {
+      console.error("Error logging in with Google:", error);
+      setError(`Failed to log in with Google: ${error.message}`);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-100">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow-lg">
-        <h2 className="mb-6 text-center text-3xl font-bold text-gray-800">Create Account</h2>
-        
-        {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-4">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-        
-        <form onSubmit={handleSignup} className="space-y-6">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Email Address
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-              placeholder="you@example.com"
-            />
-          </div>
+    <div className="grid min-h-screen lg:grid-cols-2">
+  
+      <div className="hidden lg:flex items-center justify-center">
+        <img
+          src="/signup-illustration.jpg"
+          alt="Signup Illustration"
+          className="w-[80%] h-auto object-contain"
+        />
+      </div>
+
+      <div className="flex items-center justify-center px-6 py-10 md:px-12">
+        <div className="w-full max-w-md space-y-10">
           
-          <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
-          
-          <div>
-            <button
-              type="submit"
-              className="w-full rounded-md bg-blue-600 py-2 px-4 text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          <a
+            href="#"
+            className="flex justify-center items-center gap-2 font-bold text-4xl"
+          >
+            Welcome to  <span className="flex text-green-800  align-center justify-center items-center"><LuChartNoAxesCombined /> Excelytics</span>
+          </a>
+
+          {/* Signup Form */}
+          <form
+            onSubmit={handleSignup}
+            className="flex flex-col gap-6 border p-8 rounded-xl shadow-md"
+          >
+            <h2 className="text-center text-3xl font-bold text-gray-800">
+              Create Account
+            </h2>
+
+            {error && (
+              <div className="rounded-md bg-red-50 p-4">
+                <p className="text-sm text-red-700">{error}</p>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="john@example.com"
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password">Password</Label>
+                  <a
+                    href="#"
+                    className="text-xs text-blue-600 hover:underline underline-offset-4"
+                  >
+                    Forgot your password?
+                  </a>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="********"
+                  required
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="w-full bg-green-800 hover:bg-green-700"
+              >
+                Login
+              </Button>
+            </div>
+
+            <div className="relative text-center text-sm">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-border" />
+              </div>
+              <span className="relative bg-white px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              className="w-full flex items-center justify-center gap-2"
+              onClick={handleGoogleSignIn}
             >
-              Sign Up
-            </button>
-          </div>
-        </form>
-        
-        <div className="mt-6 text-center">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <a href="/login" className="font-medium text-blue-600 hover:text-blue-500">
+              <FcGoogle className="text-lg" />
+              Login with Google
+            </Button>
+          </form>
+
+          <p className="text-center text-sm text-gray-600">
+            Already have an account?{" "}
+            <a
+              href="/login"
+              className="font-medium text-blue-600 hover:text-blue-500"
+            >
               Sign in
             </a>
           </p>
