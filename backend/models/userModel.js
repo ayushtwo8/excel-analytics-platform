@@ -3,9 +3,17 @@ const Schema = mongoose.Schema;
 
 const UserSchema = new Schema(
   {
+    uid: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
     name: {
       type: String,
       required: true,
+      trim: true,
+      minlength: 2,
     },
     email: {
       type: String,
@@ -13,38 +21,22 @@ const UserSchema = new Schema(
       unique: true,
       match: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/,
     },
-    isOAuthUser: {
-      type: Boolean,
-      default: false,
-    },
-    password: {
+    avatar: {
       type: String,
-      minlength: 6,
-      required: function() {
-        return !this.isOAuthUser;
-      },
+      trim: true,
+    },
+    bio: {
+      type: String,
+      trim: true,
     },
     role: {
       type: String,
       enum: ["user", "admin"],
       default: "user",
     },
-    profile: {
-      firstName: { type: String, trim: true },
-      lastName: { type: String, trim: true },
-      avatar: {
-        public_id: { type: String }, // Cloudinary public ID
-        url: { type: String }, // Cloudinary URL
-        secure_url: { type: String }, // Cloudinary secure URL (HTTPS)
-      },
-      bio: { type: String },
-    },
-    // For OAuth integrations if needed
-    googleId: String,
-    githubId: String,
     storageUsed: {
       type: Number,
-      default: 0 // in bytes
+      default: 0,
     },
   },
   {
@@ -52,6 +44,6 @@ const UserSchema = new Schema(
   }
 );
 
-const userModel = mongoose.model('User', UserSchema)
+const userModel = mongoose.model("User", UserSchema);
 
 export default userModel;

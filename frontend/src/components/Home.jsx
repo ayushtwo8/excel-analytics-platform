@@ -2,8 +2,12 @@ import React from "react";
 import Navbar from "./Navbar";
 import { Button } from "./ui/button";
 import { FaArrowRightLong } from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
 
 const Home = () => {
+
+  const navigate = useNavigate();
+
   return (
     <>
       <Navbar />
@@ -16,7 +20,7 @@ const Home = () => {
             Turn your Excel data into powerful insights — upload your files and
             create interactive charts in seconds.
           </p>
-          <Button className="bg-green-700 my-10 flex items-center gap-2">
+          <Button className="bg-green-700 my-10 flex items-center gap-2" onClick={() => navigate("/login")}>
             Get Started
             <FaArrowRightLong />{" "}
           </Button>
