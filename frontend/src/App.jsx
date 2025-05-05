@@ -1,12 +1,17 @@
 import React from 'react'
-import { BrowserRouter, Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import { useAuth } from './context/AuthContext'
 
 import Login from './components/Login'
 import Signup from './components/Signup'
 import Home from './components/Home'
-import Dashboard from './components/Dashboard'
+import DashboardLayout from './components/DashboardLayout'
+import Upload from './pages/Upload'
+import Charts from './pages/Charts'
+import History from './pages/History'
+import Insights from './pages/Insights'
+import Profile from './pages/Profile'
 
 // protected route component
 const ProtectedRoute = ({ children }) => {
@@ -30,7 +35,13 @@ const App = () => {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={ <PublicRoute><Login /></PublicRoute> } />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+          <Route path="upload" element={<Upload />} />
+          <Route path="charts" element={<Charts />} />
+          <Route path="history" element={<History />} />
+          <Route path="insights" element={<Insights />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
       </Routes>
     </BrowserRouter>
     </>
