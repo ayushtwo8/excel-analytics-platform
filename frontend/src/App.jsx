@@ -11,6 +11,7 @@ import Visualize from './pages/Visualize'
 import History from './pages/History'
 import SmartInsights from './pages/SmartInsights'
 import Profile from './pages/Profile'
+import ProfileEdit from './components/ProfileEdit'
 
 // protected route component
 const ProtectedRoute = ({ children }) => {
@@ -35,10 +36,11 @@ const App = () => {
         <Route path="/login" element={ <PublicRoute><Login /></PublicRoute> } />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-          <Route path="visualize" element={<Visualize />} />
-          <Route path="history" element={<History />} />
-          <Route path="insights" element={<SmartInsights />} />
-          <Route path="profile" element={<Profile />} />
+          <Route path="visualize" element={<ProtectedRoute><Visualize /></ProtectedRoute>} />
+          <Route path="history" element={<ProtectedRoute><History /></ProtectedRoute>} />
+          <Route path="insights" element={<ProtectedRoute><SmartInsights /></ProtectedRoute>} />
+          <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+          <Route path="profile-edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>
