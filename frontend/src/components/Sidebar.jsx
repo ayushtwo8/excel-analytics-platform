@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import {
   FaChartBar,
   FaHistory,
@@ -18,6 +18,7 @@ const navItems = [
 
 const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <aside
@@ -28,9 +29,16 @@ const Sidebar = () => {
       {/* Logo Section */}
       <div className="h-20 flex items-center justify-center border-b">
         {collapsed ? (
-          <LuChartNoAxesCombined className="text-3xl text-green-800" />
+          <LuChartNoAxesCombined 
+            className="text-3xl text-green-800 cursor-pointer" 
+            onClick={() => navigate("/dashboard")}
+          />
         ) : (
-          <div className="flex items-center gap-2 text-green-800 text-2xl font-bold">
+          <div 
+            className="flex items-center gap-2 text-green-800 text-2xl font-bold cursor-pointer" 
+            onClick={() => navigate("/dashboard")}
+          >
+            <LuChartNoAxesCombined />
             Excelytics
           </div>
         )}

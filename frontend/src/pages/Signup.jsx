@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { Button } from "./ui/button";
-import { Label } from "./ui/label";
-import { Input } from "./ui/input";
+import { Button } from "../components/ui/button";
+import { Label } from "../components/ui/label";
+import { Input } from "../components/ui/input";
 import { LuChartNoAxesCombined } from "react-icons/lu";
 
 const Signup = () => {
@@ -20,7 +20,7 @@ const Signup = () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
       navigate("/dashboard");
-      console.log("User signed up successfully");
+      
     } catch (error) {
       console.error("Error signing up:", error);
       setError(`Failed to sign up: ${error.message}`);

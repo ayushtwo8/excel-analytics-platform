@@ -82,6 +82,21 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const logout = async () => {
+    try {
+      // Your logout logic here (e.g., clearing tokens, etc.)
+      localStorage.removeItem('token');
+      localStorage.removeItem('uid');
+      localStorage.clear();
+      setCurrentUser(null);
+      setUserProfile(null);
+      // Any other cleanup you need
+    } catch (error) {
+      console.error("Logout error:", error);
+      throw error; // Re-throw to handle in components
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setCurrentUser(user);
@@ -105,6 +120,7 @@ export function AuthProvider({ children }) {
     userProfile,
     profileLoading,
     updateProfile,
+    logout,
     refreshProfile: () => syncUserWithBackend(currentUser)
   };
 

@@ -20,7 +20,7 @@ const Home = () => {
             Turn your Excel data into powerful insights — upload your files and
             create interactive charts in seconds.
           </p>
-          <Button className="bg-green-700 my-10 flex items-center gap-2" onClick={() => navigate("/login")}>
+          <Button className="bg-green-700 my-10 flex items-center gap-2" onClick={() => navigate("/signup")}>
             Get Started
             <FaArrowRightLong />{" "}
           </Button>

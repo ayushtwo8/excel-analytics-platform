@@ -3,15 +3,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 
 import { useAuth } from './context/AuthContext'
 
-import Login from './components/Login'
-import Signup from './components/Signup'
+import Login from './pages/Login'
+import Signup from './pages/Signup'
 import Home from './components/Home'
-import DashboardLayout from './components/DashboardLayout'
+import DashboardLayout from './pages/DashboardLayout'
 import Visualize from './pages/Visualize'
 import History from './pages/History'
 import SmartInsights from './pages/SmartInsights'
 import Profile from './pages/Profile'
-import ProfileEdit from './components/ProfileEdit'
 
 // protected route component
 const ProtectedRoute = ({ children }) => {
@@ -40,7 +39,6 @@ const App = () => {
           <Route path="history" element={<ProtectedRoute><History /></ProtectedRoute>} />
           <Route path="insights" element={<ProtectedRoute><SmartInsights /></ProtectedRoute>} />
           <Route path="profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-          <Route path="profile-edit" element={<ProtectedRoute><ProfileEdit /></ProtectedRoute>} />
         </Route>
       </Routes>
     </BrowserRouter>

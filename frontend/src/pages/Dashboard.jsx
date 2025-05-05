@@ -18,7 +18,7 @@ function Dashboard() {
     try {
       await signOut(auth);
       navigate("/login");
-      console.log("Logout successful");
+      
     } catch (err) {
       console.error("Logout failed:", err);
     }

@@ -1,32 +1,27 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import axios from 'axios';
-import { FcEditImage, FcCamera, FcCancel } from 'react-icons/fc';
-import { 
-  Alert, 
-  AlertDescription 
-} from '@/components/ui/alert';
+import { FcEditImage, FcCamera, FcCancel, FcExport } from 'react-icons/fc';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 function Profile() {
-  const { userProfile, refreshProfile, updateProfile } = useAuth();
-  
+  const { userProfile, refreshProfile, updateProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [isSaving, setIsSaving] = useState(false);
-  const [showAlert, setShowAlert] = useState(false);
-  const [alertMessage, setAlertMessage] = useState("");
-  const [alertType, setAlertType] = useState("success");
+  const [alert, setAlert] = useState({ show: false, message: '', type: 'success' });
   
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   
-  // Initialize from userProfile and fetch if needed
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -53,6 +48,11 @@ function Profile() {
     }
   }, [userProfile, refreshProfile]);
 
+  const showTemporaryAlert = (message, type = 'success') => {
+    setAlert({ show: true, message, type });
+    setTimeout(() => setAlert({ show: false, message: '', type: 'success' }), 3000);
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
     setEditForm({
@@ -62,28 +62,17 @@ function Profile() {
     });
   };
   
-  const handleCancel = () => {
-    setIsEditing(false);
-  };
+  const handleCancel = () => setIsEditing(false);
   
   const handleSave = async () => {
     try {
       setIsSaving(true);
       await updateProfile(editForm);
       setIsEditing(false);
-      setShowAlert(true);
-      setAlertMessage("Profile updated successfully!");
-      setAlertType("success");
-      
-      // Hide alert after 3 seconds
-      setTimeout(() => {
-        setShowAlert(false);
-      }, 3000);
+      showTemporaryAlert("Profile updated successfully!");
     } catch (err) {
       console.error('Error updating profile:', err);
-      setShowAlert(true);
-      setAlertMessage("Failed to update profile. Please try again.");
-      setAlertType("error");
+      showTemporaryAlert("Failed to update profile. Please try again.", "error");
     } finally {
       setIsSaving(false);
     }
@@ -106,28 +95,40 @@ function Profile() {
 
     try {
       const response = await axios.post(`${backendUrl}/api/v1/user/avatar`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      // Update form and preview with new image URL
       setEditForm(prev => ({
         ...prev,
         avatar: response.data.imageUrl
       }));
     } catch (err) {
       console.error('Error uploading image:', err);
-      setShowAlert(true);
-      setAlertMessage("Failed to upload image. Please try again.");
-      setAlertType("error");
+      showTemporaryAlert("Failed to upload image. Please try again.", "error");
     }
+  };
+
+  const handleLogout = async () => {
+    try {
+      if (typeof logout === 'function') {
+        await logout();
+      } else {
+        console.error('Logout is not a function:', logout);
+        // Fallback manual logout
+        localStorage.removeItem("token");
+        window.location.href = '/login'; // Hard redirect if needed
+      }
+    } catch (err) {
+      console.error('Error logging out:', err);
+      showTemporaryAlert("Failed to logout. Please try again.", "error");
+    }
+
   };
   
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
       </div>
     );
   }
@@ -143,12 +144,10 @@ function Profile() {
   }
   
   return (
-    <Card className="max-w-2xl mx-auto">
-      {showAlert && (
-        <Alert className={`mb-4 ${alertType === "error" ? "bg-red-100 border-red-500" : "bg-green-100 border-green-500"}`}>
-          <AlertDescription>
-            {alertMessage}
-          </AlertDescription>
+    <Card className="max-w-2xl mx-auto shadow-lg border-t-4 border-t-green-500">
+      {alert.show && (
+        <Alert className={`mx-6 mt-6 ${alert.type === "error" ? "bg-red-100 border-red-500 text-red-800" : "bg-green-100 border-green-500 text-green-800"}`}>
+          <AlertDescription className="font-medium">{alert.message}</AlertDescription>
         </Alert>
       )}
       
@@ -156,21 +155,24 @@ function Profile() {
         // Edit Mode
         <CardContent className="space-y-6 pt-6">
           <div className="flex justify-between items-center mb-4">
-            <CardTitle>Edit Profile</CardTitle>
-            <Button variant="ghost" onClick={handleCancel} disabled={isSaving}>
-              <FcCancel size={20} />
+            <CardTitle className="text-2xl font-bold text-green-700">Edit Profile</CardTitle>
+            <Button variant="ghost" onClick={handleCancel} disabled={isSaving} className="hover:bg-red-50">
+              <FcCancel size={20} className="mr-1" />
+              <span className="text-gray-700">Cancel</span>
             </Button>
           </div>
           
           <div className="flex flex-col items-center mb-6">
-            <div className="relative">
-              <Avatar className="w-24 h-24">
-                <AvatarImage src={editForm.avatar} alt="Profile" />
-                <AvatarFallback>{editForm.name?.charAt(0) || "U"}</AvatarFallback>
+            <div className="relative group">
+              <Avatar className="w-32 h-32 ring-4 ring-green-100 transition-all duration-300 group-hover:ring-green-300">
+                <AvatarImage src={editForm.avatar} alt="Profile" className="object-cover" />
+                <AvatarFallback className="bg-green-100 text-green-700 text-3xl font-bold">
+                  {editForm.name?.charAt(0) || "U"}
+                </AvatarFallback>
               </Avatar>
-              <div className="absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full text-white cursor-pointer">
-                <label htmlFor="avatar-upload" className="cursor-pointer">
-                  <FcCamera size={16} />
+              <div className="absolute bottom-0 right-0 bg-green-600 p-2 rounded-full text-white cursor-pointer shadow-md hover:bg-green-700 transition-all duration-200 hover:scale-110">
+                <label htmlFor="avatar-upload" className="cursor-pointer flex items-center justify-center">
+                  <FcCamera size={20} className="bg-white rounded-full p-1" />
                   <input 
                     type="file" 
                     id="avatar-upload" 
@@ -191,6 +193,7 @@ function Profile() {
                 name="name"
                 value={editForm.name || ''}
                 onChange={handleChange}
+                className="border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
               />
             </div>
             
@@ -201,6 +204,8 @@ function Profile() {
                 value={editForm.bio || ''}
                 onChange={handleChange}
                 rows={4}
+                className="border-gray-300 focus:border-green-500 focus:ring focus:ring-green-200 transition-all duration-200"
+                placeholder="Tell us about yourself..."
               />
             </div>
           </div>
@@ -210,14 +215,21 @@ function Profile() {
               variant="outline" 
               onClick={handleCancel}
               disabled={isSaving}
+              className="border-gray-300 hover:bg-gray-50"
             >
               Cancel
             </Button>
             <Button 
               onClick={handleSave}
               disabled={isSaving}
+              className="bg-green-600 hover:bg-green-700 text-white transition-all duration-200"
             >
-              {isSaving ? 'Saving...' : 'Save Changes'}
+              {isSaving ? (
+                <span className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-2 border-white mr-2"></div>
+                  Saving...
+                </span>
+              ) : 'Save Changes'}
             </Button>
           </div>
         </CardContent>
@@ -225,29 +237,53 @@ function Profile() {
         // View Mode
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-8">
-            <CardTitle>Profile</CardTitle>
-            <Button 
-              variant="ghost"
-              onClick={handleEdit}
-              className="flex items-center text-blue-600 hover:text-blue-800"
-            >
-              <FcEditImage size={16} className="mr-1" />
-              <span>Edit</span>
-            </Button>
+            <CardTitle className="text-2xl font-bold text-green-700">Your Profile</CardTitle>
+            <div className="flex space-x-2">
+              <Button 
+                variant="ghost"
+                onClick={handleEdit}
+                className="flex items-center text-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-200"
+              >
+                <FcEditImage size={18} className="mr-1" />
+                <span>Edit Profile</span>
+              </Button>
+              <Button 
+                variant="ghost"
+                onClick={handleLogout}
+                className="flex items-center text-red-600 hover:text-red-800 hover:bg-red-50 transition-all duration-200"
+              >
+                <FcExport size={18} className="mr-1" />
+                <span>Logout</span>
+              </Button>
+            </div>
           </div>
           
           <div className="flex flex-col md:flex-row items-center md:items-start gap-8">
             <div className="flex-shrink-0">
-              <Avatar className="w-32 h-32">
-                <AvatarImage src={userProfile?.avatar} alt="Profile" />
-                <AvatarFallback>{userProfile?.name?.charAt(0) || "U"}</AvatarFallback>
+              <Avatar className="w-32 h-32 ring-4 ring-green-100 shadow-md">
+                <AvatarImage src={userProfile?.avatar} alt="Profile" className="object-cover" />
+                <AvatarFallback className="bg-green-100 text-green-700 text-3xl font-bold">
+                  {userProfile?.name?.charAt(0) || "U"}
+                </AvatarFallback>
               </Avatar>
             </div>
             
             <div className="flex-grow text-center md:text-left">
-              <h2 className="text-xl font-semibold mb-2">{userProfile?.name}</h2>
-              <p className="text-gray-600 mb-4">{userProfile?.bio}</p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">{userProfile?.name}</h2>
+              <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-400">
+                {userProfile?.bio ? (
+                  <p className="text-gray-700 leading-relaxed">{userProfile.bio}</p>
+                ) : (
+                  <p className="text-gray-500 italic">No bio yet. Click Edit to add information about yourself.</p>
+                )}
+              </div>
               
+              <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="text-sm text-gray-500">
+                  <p className="mb-1">Member since: {new Date().toLocaleDateString()}</p>
+                  <p>Email: {userProfile?.email || 'Not provided'}</p>
+                </div>
+              </div>
             </div>
           </div>
         </CardContent>
