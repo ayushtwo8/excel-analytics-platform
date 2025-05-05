@@ -7,8 +7,7 @@ import Login from './components/Login'
 import Signup from './components/Signup'
 import Home from './components/Home'
 import DashboardLayout from './components/DashboardLayout'
-import Upload from './pages/Upload'
-import Charts from './pages/Charts'
+import Visualize from './pages/Visualize'
 import History from './pages/History'
 import Insights from './pages/Insights'
 import Profile from './pages/Profile'
@@ -36,8 +35,7 @@ const App = () => {
         <Route path="/login" element={ <PublicRoute><Login /></PublicRoute> } />
         <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
         <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-          <Route path="upload" element={<Upload />} />
-          <Route path="charts" element={<Charts />} />
+          <Route path="visualize" element={<Visualize />} />
           <Route path="history" element={<History />} />
           <Route path="insights" element={<Insights />} />
           <Route path="profile" element={<Profile />} />

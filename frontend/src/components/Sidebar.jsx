@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
-  FaUpload,
   FaChartBar,
   FaHistory,
   FaRobot,
@@ -11,8 +10,7 @@ import { LuChartNoAxesCombined } from "react-icons/lu";
 import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 
 const navItems = [
-  { path: "/dashboard/upload", icon: <FaUpload />, label: "Upload Data" },
-  { path: "/dashboard/charts", icon: <FaChartBar />, label: "Charts" },
+  { path: "/dashboard/visualize", icon: <FaChartBar />, label: "Visualize" },
   { path: "/dashboard/history", icon: <FaHistory />, label: "History" },
   { path: "/dashboard/insights", icon: <FaRobot />, label: "Smart Insights" },
   { path: "/dashboard/profile", icon: <FaUser />, label: "Profile" },
