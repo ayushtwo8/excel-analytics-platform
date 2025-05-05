@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 
 function Profile() {
   const { userProfile, refreshProfile, updateProfile } = useAuth();
@@ -249,11 +248,6 @@ function Profile() {
               <h2 className="text-xl font-semibold mb-2">{userProfile?.name}</h2>
               <p className="text-gray-600 mb-4">{userProfile?.bio}</p>
               
-              <div className="flex flex-wrap gap-2">
-                <Badge variant="secondary">Design</Badge>
-                <Badge variant="secondary">Development</Badge>
-                <Badge variant="secondary">UX</Badge>
-              </div>
             </div>
           </div>
         </CardContent>
