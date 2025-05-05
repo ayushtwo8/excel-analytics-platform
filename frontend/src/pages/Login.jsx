@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { auth, googleProvider } from "@/lib/firebase";
 import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { useNavigate, Link } from "react-router-dom";
@@ -11,12 +11,18 @@ import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
 
 const Login = () => {
+  const { currentUser, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { refreshProfile } = useAuth();
+
+  useEffect(() => {
+    if(isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [isAuthenticated, navigate])
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -33,8 +39,8 @@ const Login = () => {
       localStorage.setItem("uid", user.uid);
       
       // Refresh user profile
-      await refreshProfile();
-      navigate("/dashboard");
+    
+   
     } catch (error) {
       console.error("Error logging in:", error);
       // User-friendly error messages
@@ -62,8 +68,7 @@ const Login = () => {
       localStorage.setItem("token", await user.getIdToken());
       localStorage.setItem("uid", user.uid);
       
-      await refreshProfile();
-      navigate("/dashboard");
+    
     } catch (error) {
       console.error("Error logging in with Google:", error);
       setError("Google sign-in failed. Please try again.");

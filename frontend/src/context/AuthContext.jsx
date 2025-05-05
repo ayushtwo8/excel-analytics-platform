@@ -1,77 +1,113 @@
-import { createContext, useState, useEffect, useContext } from "react";
-import { auth } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
-import axios from "axios";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { auth } from '../lib/firebase';
+import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
 
-const AuthContext = createContext();
-
-export function useAuth() {
-  return useContext(AuthContext);
-}
+export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [idToken, setIdToken] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(false);
-
+  
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // Sync user with backend and get profile data
-  const syncUserWithBackend = async (user) => {
-    if(!user) {
+  // Check token validity early to avoid unnecessary API calls
+  const isTokenValid = () => {
+    const token = localStorage.getItem('token');
+    if (!token) return false;
+    
+    // You could add JWT expiry checking here if your tokens contain expiry data
+    // For Firebase tokens, you might need to validate on the server
+    return true;
+  };
+  
+  // Handle authentication state changes
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        try {
+          // User is signed in
+          const token = await user.getIdToken();
+          localStorage.setItem('token', token);
+          localStorage.setItem('uid', user.uid);
+          setCurrentUser(user);
+          
+          // Only fetch profile if we have a valid user and token
+          await refreshProfile();
+        } catch (error) {
+          console.error("Error setting user:", error);
+          handleAuthFailure();
+        }
+      } else {
+        // User is signed out
+        handleAuthFailure();
+      }
+      setAuthLoading(false);
+    });
+
+    // If there's no auth state change but we have a token, try to use it
+    if (!auth.currentUser && localStorage.getItem('token')) {
+      refreshProfile().catch(handleAuthFailure);
+    }
+    
+    return () => unsubscribe();
+  }, []);
+  
+  // Helper to handle auth failures consistently
+  const handleAuthFailure = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('uid');
+    setCurrentUser(null);
+    setUserProfile(null);
+  };
+
+  // Refresh user profile from backend
+  const refreshProfile = async () => {
+    // Don't fetch profile if we don't have a valid token
+    if (!isTokenValid()) {
+      handleAuthFailure();
       return;
     }
-
+    
+    setProfileLoading(true);
     try {
-      setProfileLoading(true);
-      const token = await user.getIdToken(true);
-      setIdToken(token);
-
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-
-      const response = await axios.get(`${backendUrl}/api/v1/user/profile`);
-      setUserProfile(response.data);
-      console.log("User profile loaded:", response.data);
-    }
-    catch (error) {
-      console.error("Error syncing user with backend:", error.response?.data?.message || error.message);
+      const response = await axios.get(`${backendUrl}/api/v1/user/profile`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
       
-      // If profile not found (404), we might want to create it
-      if (error.response?.status === 404) {
-        await createUserProfile(user);
+      if (response.data) {
+        setUserProfile(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      
+      // If we get an auth error, clear the tokens
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        handleAuthFailure();
       }
     } finally {
       setProfileLoading(false);
     }
   };
 
-  // Create initial user profile
-  const createUserProfile = async (user) => {
-    try {
-      // Create basic profile with data from Firebase Auth
-      const initialProfile = {
-        displayName: user.displayName || user.email.split('@')[0],
-        email: user.email,
-        photoURL: user.photoURL || '',
-      };
-      
-      const response = await axios.post(`${backendUrl}/api/v1/user/profile`, initialProfile);
-      setUserProfile(response.data);
-      console.log("Initial profile created:", response.data);
-    } catch (error) {
-      console.error("Error creating user profile:", error.response?.data?.message || error.message);
-    }
-  };
-
   // Update user profile
   const updateProfile = async (profileData) => {
-    if (!currentUser) return;
+    if (!isTokenValid()) {
+      throw new Error("Not authenticated");
+    }
     
+    setProfileLoading(true);
     try {
-      setProfileLoading(true);
-      const response = await axios.put(`${backendUrl}/api/v1/user/profile`, profileData);
+      const response = await axios.put(`${backendUrl}/api/v1/user/profile`, profileData, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
       setUserProfile(response.data);
       return response.data;
     } catch (error) {
@@ -82,51 +118,38 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Logout function
   const logout = async () => {
     try {
-      // Your logout logic here (e.g., clearing tokens, etc.)
+      await auth.signOut();
       localStorage.removeItem('token');
       localStorage.removeItem('uid');
       localStorage.clear();
       setCurrentUser(null);
       setUserProfile(null);
-      // Any other cleanup you need
+      
+      // Force navigate to login
+      window.location.href = '/login';
     } catch (error) {
       console.error("Logout error:", error);
-      throw error; // Re-throw to handle in components
+      throw error;
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setCurrentUser(user);
-      if(user){
-        await syncUserWithBackend(user);
-      } else{
-        setIdToken(null);
-        setUserProfile(null);
-        delete axios.defaults.headers.common["Authorization"];
-      }
-      setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const value = {
-    currentUser,
-    idToken,
-    loading,
-    userProfile,
-    profileLoading,
-    updateProfile,
-    logout,
-    refreshProfile: () => syncUserWithBackend(currentUser)
-  };
-
   return (
-    <AuthContext.Provider value={value}>
-      {!loading && children}
+    <AuthContext.Provider value={{
+      currentUser,
+      userProfile,
+      authLoading,
+      profileLoading,
+      refreshProfile,
+      updateProfile,
+      logout,
+      isAuthenticated: !!currentUser || isTokenValid()
+    }}>
+      {children}
     </AuthContext.Provider>
   );
 }
+
+export const useAuth = () => useContext(AuthContext);

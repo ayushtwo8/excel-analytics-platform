@@ -32,16 +32,20 @@ const FileSchema = new Schema({
   charts: [{
     title: {
       type: String,
+      required: true,
       default: 'Untitled Chart'
     },
-    type: String,  // pie, bar, line, scatter, 3d, etc.
+    type: {
+      type: String,
+      required: true
+    },
     config: {
       sheet: String,
       xAxis: String,
       yAxis: String,
       zAxis: String,
       aggregation: String,
-      filters: Array
+      filters: mongoose.Schema.Types.Mixed
     },
     createdAt: {
       type: Date,

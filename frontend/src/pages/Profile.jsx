@@ -95,7 +95,9 @@ function Profile() {
 
     try {
       const response = await axios.post(`${backendUrl}/api/v1/user/avatar`, formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+        headers: { 'Content-Type': 'multipart/form-data',
+          'Authorization':`Bearer ${localStorage.getItem('token')}`
+         }
       });
       
       setEditForm(prev => ({
