@@ -16,6 +16,7 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization'],
 }))
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 app.use('/api/v1/user', userRouter);
 

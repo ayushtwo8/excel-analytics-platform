@@ -34,6 +34,9 @@ const UserSchema = new Schema(
       enum: ["user", "admin"],
       default: "user",
     },
+    cloudinary_id: {
+      type: String
+    },
     storageUsed: {
       type: Number,
       default: 0,
