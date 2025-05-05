@@ -9,7 +9,7 @@ import Home from './components/Home'
 import DashboardLayout from './components/DashboardLayout'
 import Visualize from './pages/Visualize'
 import History from './pages/History'
-import Insights from './pages/Insights'
+import SmartInsights from './pages/SmartInsights'
 import Profile from './pages/Profile'
 
 // protected route component
@@ -37,7 +37,7 @@ const App = () => {
         <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
           <Route path="visualize" element={<Visualize />} />
           <Route path="history" element={<History />} />
-          <Route path="insights" element={<Insights />} />
+          <Route path="insights" element={<SmartInsights />} />
           <Route path="profile" element={<Profile />} />
         </Route>
       </Routes>
