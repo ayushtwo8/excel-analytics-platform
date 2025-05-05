@@ -1,12 +1,10 @@
 import React, { useState } from "react";
 import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithPopup } from "firebase/auth";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Input } from "./ui/input";
-import { FcGoogle } from "react-icons/fc";
 import { LuChartNoAxesCombined } from "react-icons/lu";
 
 const Signup = () => {
@@ -29,17 +27,6 @@ const Signup = () => {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    try {
-      await signInWithPopup(auth, googleProvider);
-      navigate("/dashboard");
-      console.log("User logged in with Google successfully");
-    } catch (error) {
-      console.error("Error logging in with Google:", error);
-      setError(`Failed to log in with Google: ${error.message}`);
-    }
-  };
-
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
   
@@ -52,7 +39,7 @@ const Signup = () => {
       </div>
 
       <div className="flex items-center justify-center px-6 py-10 md:px-12">
-        <div className="w-full max-w-md space-y-10">
+        <div className="w-full max-w-md space-y-16">
           
           <a
             href="#"
@@ -66,7 +53,7 @@ const Signup = () => {
             onSubmit={handleSignup}
             className="flex flex-col gap-6 border p-8 rounded-xl shadow-md"
           >
-            <h2 className="text-center text-3xl font-bold text-gray-800">
+            <h2 className="text-center text-3xl font-semibold pb-4 text-gray-800">
               Create Account
             </h2>
 
@@ -113,31 +100,10 @@ const Signup = () => {
                 type="submit"
                 className="w-full bg-green-800 hover:bg-green-700"
               >
-                Login
+                Signup
               </Button>
             </div>
-
-            <div className="relative text-center text-sm">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <span className="relative bg-white px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full flex items-center justify-center gap-2"
-              onClick={handleGoogleSignIn}
-            >
-              <FcGoogle className="text-lg" />
-              Login with Google
-            </Button>
-          </form>
-
-          <p className="text-center text-sm text-gray-600">
+            <p className="text-center text-sm text-gray-600">
             Already have an account?{" "}
             <a
               href="/login"
@@ -146,6 +112,11 @@ const Signup = () => {
               Sign in
             </a>
           </p>
+
+           
+          </form>
+
+          
         </div>
       </div>
     </div>
