@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { auth, googleProvider } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { Button } from "./ui/button";
@@ -51,7 +51,7 @@ const Signup = () => {
           {/* Signup Form */}
           <form
             onSubmit={handleSignup}
-            className="flex flex-col gap-6 border p-8 rounded-xl shadow-md"
+            className="flex flex-col gap-6 border p-12 rounded-xl shadow-md"
           >
             <h2 className="text-center text-3xl font-semibold pb-4 text-gray-800">
               Create Account
