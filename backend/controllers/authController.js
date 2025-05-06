@@ -73,6 +73,7 @@ export const getProfile = async (req, res) => {
 export const createProfile = async (req, res) => {
   try {
     const uid = req.user.uid;
+    console.log(req.body);
     const { displayName, email, photoURL, bio } = req.body;
 
     const existingUser = await userModel.findOne({ uid });

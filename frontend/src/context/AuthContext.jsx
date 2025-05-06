@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { auth } from '../lib/firebase';
 import axios from 'axios';
-import { useNavigate } from 'react-router-dom';
 
 export const AuthContext = createContext();
 

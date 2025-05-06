@@ -38,9 +38,8 @@ const Login = () => {
       localStorage.setItem("token", await user.getIdToken());
       localStorage.setItem("uid", user.uid);
       
-      // Refresh user profile
-    
-   
+      // Navigate to dashboard (this will also happen automatically with useEffect)
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error logging in:", error);
       // User-friendly error messages
@@ -67,8 +66,35 @@ const Login = () => {
       // Store auth info
       localStorage.setItem("token", await user.getIdToken());
       localStorage.setItem("uid", user.uid);
+
+      // create or fetch user profile from backend
+      try {
+        // Attempt to fetch profile first
+        const profileResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/v1/user/profile`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem('token')}`
+          }
+        });
+      } catch (profileError) {
+        // If profile doesn't exist, create one with Google data
+        if (profileError.response && profileError.response.status === 404) {
+          const userProfile = {
+            displayName: user.displayName || '',
+            email: user.email,
+            photoURL: user.photoURL || '',
+            // Add any other profile fields your backend requires
+          };
+          
+          await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/v1/user/profile`, userProfile, {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem('token')}`
+            }
+          });
+        }
+      }
       
-    
+      // Navigate to dashboard after successful Google sign-in
+      navigate("/dashboard");
     } catch (error) {
       console.error("Error logging in with Google:", error);
       setError("Google sign-in failed. Please try again.");
