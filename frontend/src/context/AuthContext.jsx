@@ -23,6 +23,46 @@ export function AuthProvider({ children }) {
     return true;
   };
   
+  // Helper to handle auth failures consistently
+  const handleAuthFailure = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('uid');
+    setCurrentUser(null);
+    setUserProfile(null);
+  };
+
+  // Refresh user profile from backend
+  // Define this BEFORE the useEffect that uses it
+  const refreshProfile = async () => {
+    // Don't fetch profile if we don't have a valid token
+    if (!isTokenValid()) {
+      handleAuthFailure();
+      return;
+    }
+    
+    setProfileLoading(true);
+    try {
+      const response = await axios.get(`${backendUrl}/api/v1/user/profile`, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (response.data) {
+        setUserProfile(response.data);
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      
+      // If we get an auth error, clear the tokens
+      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
+        handleAuthFailure();
+      }
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+  
   // Handle authentication state changes
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -54,45 +94,6 @@ export function AuthProvider({ children }) {
     
     return () => unsubscribe();
   }, []);
-  
-  // Helper to handle auth failures consistently
-  const handleAuthFailure = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('uid');
-    setCurrentUser(null);
-    setUserProfile(null);
-  };
-
-  // Refresh user profile from backend
-  const refreshProfile = async () => {
-    // Don't fetch profile if we don't have a valid token
-    if (!isTokenValid()) {
-      handleAuthFailure();
-      return;
-    }
-    
-    setProfileLoading(true);
-    try {
-      const response = await axios.get(`${backendUrl}/api/v1/user/profile`, {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-      
-      if (response.data) {
-        setUserProfile(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      
-      // If we get an auth error, clear the tokens
-      if (error.response && (error.response.status === 401 || error.response.status === 403)) {
-        handleAuthFailure();
-      }
-    } finally {
-      setProfileLoading(false);
-    }
-  };
 
   // Update user profile
   const updateProfile = async (profileData) => {
