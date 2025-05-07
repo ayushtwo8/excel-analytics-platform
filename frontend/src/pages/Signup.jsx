@@ -5,6 +5,7 @@ import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { LuChartNoAxesCombined } from "react-icons/lu";
 import { useUserAuth } from "@/context/userAuthContext";
+import axios from "axios";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
@@ -13,15 +14,34 @@ const Signup = () => {
   const { signUp } = useUserAuth();
   const navigate = useNavigate();
 
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
     try {
-      await signUp(email, password);
-      navigate("/dashboard");
+      const { user } = await signUp(email, password);
+
+      const userProfile = {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+      };
+
+      await axios.post(`${backendUrl}/api/v1/user/profile`, userProfile, {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.accessToken}`,
+        },
+      });
+      console.log(userProfile);
+      navigate("/login");
     } catch (error) {
-      console.error("Error signing up:", error);
-      setError(`Failed to sign up: ${error.message}`);
+      console.error("Signup Error:", error);
+      setError(
+        `Signup Failed: ${error.response?.data?.message || error.message}`
+      );
     }
   };
 
@@ -47,7 +67,6 @@ const Signup = () => {
             </span>
           </a>
 
-          {/* Signup Form */}
           <form
             onSubmit={handleSignup}
             className="flex flex-col gap-6 border p-12 rounded-xl shadow-md"
@@ -78,7 +97,6 @@ const Signup = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  
                 </div>
                 <Input
                   id="password"

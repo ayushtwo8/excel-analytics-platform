@@ -7,23 +7,30 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
+import axios from "axios";
+
 
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const { login, googleSignIn } = useUserAuth();
+  const { login, googleSignIn, logout } = useUserAuth();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
+
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
     try {
-      await login(email, password);
+      const { user } = await login(email, password);
+      const idToken = await user.getIdToken();
+      localStorage.setItem("idToken", idToken);
       navigate("/dashboard");
     } catch (error) {
+      setIsLoading(false);
       console.error("Error signing up:", error);
       setError(`Failed to sign up: ${error.message}`);
     }
@@ -34,10 +41,56 @@ const Login = () => {
     setError("");
     setIsLoading(true);
     try {
-      await googleSignIn();
-      navigate("/dashboard");
+      const { user } = await googleSignIn();
+      console.log("Google user:", user);
+      const idToken = await user.getIdToken();
+
+      const res = await axios.post(
+        `${backendUrl}/api/v1/user/checkUser`,
+        { idToken }, // <-- this was missing
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+
+      console.log("User exists:", res.data.exists);
+      if (res.data.exists) {
+        localStorage.setItem("idToken", idToken);
+        navigate("/dashboard");
+      } else {
+        // New user: create their profile
+        const createRes = await axios.post(
+          `${backendUrl}/api/v1/user/profile`,
+          {
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL || "",
+            bio: "",
+          },
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${idToken}`,
+            },
+          }
+        );
+
+        if (createRes.data.success) {
+          localStorage.setItem("idToken", idToken);
+          navigate("/dashboard");
+        } else {
+          setError("Failed to create user profile. Please try again.");
+          await logout();
+        }
+      }
     } catch (error) {
-      setError(`Failed to sign up: ${error.message}`);
+      console.error("Google sign in failed", error);
+      setError(`Google sign in failed. Please try again: ${error}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 

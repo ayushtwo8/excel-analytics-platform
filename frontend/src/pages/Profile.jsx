@@ -16,40 +16,42 @@ function Profile() {
   const [isEditing, setIsEditing] = useState(false);
   const [editForm, setEditForm] = useState({});
   const [isSaving, setIsSaving] = useState(false);
+  const [user, setUser] = useState(null);
   const [alert, setAlert] = useState({
     show: false,
     message: "",
     type: "success",
   });
-  const { userProfile, updateProfile, logout } = useUserAuth();
 
+  const { logout } = useUserAuth();
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
+  // Fetch user profile
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        // await refreshProfile();
-        setError(null);
+        const { data } = await axios.get(`${backendUrl}/api/v1/user/profile`, {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("idToken")}`,
+          },
+        });
+        console.log("User Profile Data:", data);
+        setUser(data);
+        setEditForm({
+          name: data.name || "",
+          bio: data.bio || "",
+          avatar: data.avatar || "",
+        });
       } catch (err) {
-        setError("Failed to fetch profile data");
-        console.error("Error fetching profile:", err);
+        setError("Failed to load profile");
+        console.error(err);
       } finally {
         setLoading(false);
       }
     };
-
-    if (userProfile) {
-      setEditForm({
-        name: userProfile.name || "",
-        bio: userProfile.bio || "",
-        avatar: userProfile.avatar || "",
-      });
-      setLoading(false);
-    } else {
-      fetchProfile();
-    }
-  }, [userProfile]);
+    fetchProfile();
+  }, []);
 
   const showTemporaryAlert = (message, type = "success") => {
     setAlert({ show: true, message, type });
@@ -62,9 +64,9 @@ function Profile() {
   const handleEdit = () => {
     setIsEditing(true);
     setEditForm({
-      name: userProfile?.name || "",
-      bio: userProfile?.bio || "",
-      avatar: userProfile?.avatar || "",
+      name: user?.name || "",
+      bio: user?.bio || "",
+      avatar: user?.avatar || "",
     });
   };
 
@@ -73,7 +75,19 @@ function Profile() {
   const handleSave = async () => {
     try {
       setIsSaving(true);
-      await updateProfile(editForm);
+      const response = await axios.put(
+        `${backendUrl}/api/v1/user/profile`,
+        editForm,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("idToken")}`,
+          },
+        }
+      );
+      console.log("Profile updated:", response.data);
+      setUser(response.data);
+
       setIsEditing(false);
       showTemporaryAlert("Profile updated successfully!");
     } catch (err) {
@@ -87,12 +101,8 @@ function Profile() {
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setEditForm((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+  const handleChange = ({ target: { name, value } }) => {
+    setEditForm((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleImageUpload = async (e) => {
@@ -103,21 +113,17 @@ function Profile() {
     formData.append("avatar", file);
 
     try {
-      const response = await axios.post(
+      const { data } = await axios.post(
         `${backendUrl}/api/v1/user/avatar`,
         formData,
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("idToken")}`,
           },
         }
       );
-
-      setEditForm((prev) => ({
-        ...prev,
-        avatar: response.data.imageUrl,
-      }));
+      setEditForm((prev) => ({ ...prev, avatar: data.imageUrl }));
     } catch (err) {
       console.error("Error uploading image:", err);
       showTemporaryAlert("Failed to upload image. Please try again.", "error");
@@ -127,8 +133,11 @@ function Profile() {
   const handleLogout = async () => {
     try {
       await logout();
-    } catch (error) {
-      console.log("Error in logout: ", err.message);
+      localStorage.removeItem("idToken");
+      showTemporaryAlert("Logged out successfully!");
+      window.location.href = "/login";
+    } catch (err) {
+      console.log("Error logging out:", err.message);
     }
   };
 
@@ -167,7 +176,6 @@ function Profile() {
       )}
 
       {isEditing ? (
-        // Edit Mode
         <CardContent className="space-y-6 pt-6">
           <div className="flex justify-between items-center mb-4">
             <CardTitle className="text-2xl font-bold text-green-700">
@@ -260,7 +268,6 @@ function Profile() {
           </div>
         </CardContent>
       ) : (
-        // View Mode
         <CardContent className="pt-6">
           <div className="flex justify-between items-center mb-8">
             <CardTitle className="text-2xl font-bold text-green-700">
@@ -273,7 +280,7 @@ function Profile() {
                 className="flex items-center text-green-600 hover:text-green-800 hover:bg-green-50 transition-all duration-200"
               >
                 <FaUserEdit size={18} className="mr-1" />
-                <span>Edit Profile</span>
+                Edit Profile
               </Button>
               <Button
                 variant="ghost"
@@ -281,7 +288,7 @@ function Profile() {
                 className="flex items-center text-red-600 hover:text-red-800 hover:bg-red-50 transition-all duration-200"
               >
                 <TbLogout size={18} className="mr-1" />
-                <span>Logout</span>
+                Logout
               </Button>
             </div>
           </div>
@@ -290,25 +297,23 @@ function Profile() {
             <div className="flex-shrink-0">
               <Avatar className="w-32 h-32 ring-4 ring-green-100 shadow-md">
                 <AvatarImage
-                  src={userProfile?.avatar}
+                  src={user?.avatar}
                   alt="Profile"
                   className="object-cover"
                 />
                 <AvatarFallback className="bg-green-100 text-green-700 text-3xl font-bold">
-                  {userProfile?.name?.charAt(0) || "U"}
+                  {user?.name?.charAt(0) || "U"}
                 </AvatarFallback>
               </Avatar>
             </div>
 
             <div className="flex-grow text-center md:text-left">
               <h2 className="text-2xl font-bold text-gray-800 mb-2">
-                {userProfile?.name}
+                {user?.name}
               </h2>
               <div className="bg-gray-50 p-4 rounded-lg border-l-4 border-green-400">
-                {userProfile?.bio ? (
-                  <p className="text-gray-700 leading-relaxed">
-                    {userProfile.bio}
-                  </p>
+                {user?.bio ? (
+                  <p className="text-gray-700 leading-relaxed">{user.bio}</p>
                 ) : (
                   <p className="text-gray-500 italic">
                     No bio yet. Click Edit to add information about yourself.
@@ -321,7 +326,7 @@ function Profile() {
                   <p className="mb-1">
                     Member since: {new Date().toLocaleDateString()}
                   </p>
-                  <p>Email: {userProfile?.email || "Not provided"}</p>
+                  <p>Email: {user?.email || "Not provided"}</p>
                 </div>
               </div>
             </div>

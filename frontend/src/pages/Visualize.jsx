@@ -74,7 +74,7 @@ const Visualize = () => {
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("idToken")}`,
           },
         }
       );
@@ -194,7 +194,7 @@ const Visualize = () => {
         chartConfig,
         {
           headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${localStorage.getItem("idToken")}`,
             'Content-Type': 'application/json'
           },
         }

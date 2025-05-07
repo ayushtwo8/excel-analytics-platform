@@ -5,6 +5,7 @@ import fs from "fs/promises";
 import multer from "multer";
 import userModel from "../models/userModel.js";
 import cloudinary from "../config/cloudinary.js";
+import admin from "../config/firebase.js";
 
 // File path configuration
 const __filename = fileURLToPath(import.meta.url);
@@ -48,10 +49,7 @@ const ensureTmpDirectory = async () => {
   }
 };
 
-// Controller functions
-/**
- * Get user profile by UID
- */
+// getting the profile
 export const getProfile = async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -61,19 +59,59 @@ export const getProfile = async (req, res) => {
       return res.status(404).json({ message: "Profile not found" });
     }
 
-    res.json(user);
+    return res.json(user);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error("Error fetching profile:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 
-/**
- * Create new user profile
- */
+// for checking if the user exists
+export const checkUser = async (req, res) => {
+  try {
+    const { idToken } = req.body;
+
+    if (!idToken) {
+      return res.status(400).json({
+        success: false,
+        message: "No ID token provided",
+      });
+    }
+
+    try {
+      // Verify token
+      const decodedToken = await admin.auth().verifyIdToken(idToken);
+      const uid = decodedToken.uid;
+
+      // Find user in database
+      const user = await userModel.findOne({ uid });
+
+      return res.status(200).json({
+        success: true,
+        exists: !!user,
+      });
+    } catch (tokenError) {
+      console.error("Token verification error:", tokenError);
+      return res.status(401).json({
+        success: false,
+        message: "Invalid or expired token",
+      });
+    }
+  } catch (error) {
+    console.error("Check user error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Server error when checking user",
+    });
+  }
+};
+
+// for creating new profiles
 export const createProfile = async (req, res) => {
   try {
     const uid = req.user.uid;
-    console.log(req.body);
     const { displayName, email, photoURL, bio } = req.body;
 
     const existingUser = await userModel.findOne({ uid });
@@ -88,17 +126,20 @@ export const createProfile = async (req, res) => {
       avatar: photoURL || "",
       bio: bio || "",
     });
-    console.log("New user created:", newUser);
 
-    res.status(201).json(newUser);
+    return res.status(201).json({
+      message: "Profile created successfully",
+      user: newUser,
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.log("Error creating profile:", error);
+    return res
+      .status(500)
+      .json({ message: "Server error", error: error.message });
   }
 };
 
-/**
- * Update user profile information
- */
+// for updating the profile
 export const updateProfile = async (req, res) => {
   try {
     const uid = req.user.uid;
@@ -119,14 +160,12 @@ export const updateProfile = async (req, res) => {
   }
 };
 
-/**
- * Update user avatar with file upload and Cloudinary integration
- */
+// for updating the avatar
 export const updateAvatar = async (req, res) => {
   try {
     await ensureTmpDirectory();
 
-    upload(req, res, async function (err) {
+    upload(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
         return res
           .status(400)

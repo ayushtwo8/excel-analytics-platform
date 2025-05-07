@@ -4,11 +4,13 @@ import {
   getProfile,
   updateProfile,
   updateAvatar,
-} from "../controllers/authController.js";
+  checkUser,
+} from "../controllers/userController.js";
 import authMiddleware from "../middlewares/authMiddlware.js";
 
 const userRouter = Router();
 
+userRouter.post('/checkUser', checkUser)
 userRouter.get("/profile", authMiddleware, getProfile);
 userRouter.post("/profile", authMiddleware, createProfile);
 userRouter.put("/profile", authMiddleware, updateProfile);
