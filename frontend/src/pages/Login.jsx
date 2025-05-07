@@ -1,8 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { auth, googleProvider } from "@/lib/firebase";
-import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
+import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useUserAuth } from "@/context/userAuthContext";
 import { LuChartNoAxesCombined } from "react-icons/lu";
 import { FcGoogle } from "react-icons/fc";
 import { Button } from "../components/ui/button";
@@ -11,111 +9,63 @@ import { Label } from "../components/ui/label";
 import { Loader2 } from "lucide-react";
 
 const Login = () => {
-  const { currentUser, isAuthenticated } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, googleSignIn } = useUserAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    if(isAuthenticated) {
-      navigate("/dashboard");
-    }
-  }, [isAuthenticated, navigate])
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setError("");
     setIsLoading(true);
-
     try {
-      // Sign in with Firebase
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      // Store auth info in localStorage
-      localStorage.setItem("token", await user.getIdToken());
-      localStorage.setItem("uid", user.uid);
-      
-      // Navigate to dashboard (this will also happen automatically with useEffect)
+      await login(email, password);
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error logging in:", error);
-      // User-friendly error messages
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
-        setError("Invalid email or password. Please try again.");
-      } else if (error.code === 'auth/too-many-requests') {
-        setError("Too many failed login attempts. Please try again later.");
-      } else {
-        setError("Failed to log in. Please check your credentials and try again.");
-      }
-    } finally {
-      setIsLoading(false);
+      console.error("Error signing up:", error);
+      setError(`Failed to sign up: ${error.message}`);
     }
-  }
+  };
 
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async (e) => {
+    e.preventDefault();
     setError("");
     setIsLoading(true);
-    
     try {
-      const result = await signInWithPopup(auth, googleProvider);
-      const user = result.user;
-      
-      // Store auth info
-      localStorage.setItem("token", await user.getIdToken());
-      localStorage.setItem("uid", user.uid);
-
-      // create or fetch user profile from backend
-      try {
-        // Attempt to fetch profile first
-        const profileResponse = await axios.get(`${import.meta.env.VITE_BACKEND_URL}/api/v1/user/profile`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token')}`
-          }
-        });
-      } catch (profileError) {
-        // If profile doesn't exist, create one with Google data
-        if (profileError.response && profileError.response.status === 404) {
-          const userProfile = {
-            displayName: user.displayName || '',
-            email: user.email,
-            photoURL: user.photoURL || '',
-            // Add any other profile fields your backend requires
-          };
-          
-          await axios.post(`${import.meta.env.VITE_BACKEND_URL}/api/v1/user/profile`, userProfile, {
-            headers: {
-              Authorization: `Bearer ${localStorage.getItem('token')}`
-            }
-          });
-        }
-      }
-      
-      // Navigate to dashboard after successful Google sign-in
+      await googleSignIn();
       navigate("/dashboard");
     } catch (error) {
-      console.error("Error logging in with Google:", error);
-      setError("Google sign-in failed. Please try again.");
-    } finally {
-      setIsLoading(false);
+      setError(`Failed to sign up: ${error.message}`);
     }
-  }
+  };
+
+  const handleResetPassword = (e) => {
+    e.preventDefault();
+    setError("");
+    navigate("/reset-password");
+  };
 
   return (
     <>
       <div className="grid min-h-svh lg:grid-cols-2">
         <div className="flex flex-col gap-4 p-6 md:p-10">
           <div className="flex justify-center gap-2 md:justify-start">
-            <Link to="/" className="flex justify-center items-center gap-2 text-green-800 font-bold text-2xl">
+            <Link
+              to="/"
+              className="flex justify-center items-center gap-2 text-green-800 font-bold text-2xl"
+            >
               <LuChartNoAxesCombined />
               Excelytics
             </Link>
           </div>
           <div className="flex flex-1 items-center justify-center">
             <div className="w-full max-w-sm">
-              <form onSubmit={handleLogin} className='flex flex-col gap-6 border p-6 rounded-lg shadow-md'>
+              <form
+                onSubmit={handleLogin}
+                className="flex flex-col gap-6 border p-6 rounded-lg shadow-md"
+              >
                 <div className="flex flex-col items-center gap-2 text-center">
                   <h1 className="text-2xl font-bold">Login to your account</h1>
                   {error && <p className="text-red-500 text-sm">{error}</p>}
@@ -140,24 +90,25 @@ const Login = () => {
                     <div className="flex items-center">
                       <Label htmlFor="password">Password</Label>
                       <Link
+                        onClick={handleResetPassword}
                         to="/reset-password"
                         className="ml-auto text-xs underline-offset-4 hover:underline"
                       >
                         Forgot your password?
                       </Link>
                     </div>
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      value={password} 
-                      onChange={(e) => setPassword(e.target.value)} 
-                      placeholder='********' 
-                      required 
+                    <Input
+                      id="password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="********"
+                      required
                       disabled={isLoading}
                     />
                   </div>
-                  <Button 
-                    type="submit" 
+                  <Button
+                    type="submit"
                     className="w-full bg-green-800 hover:bg-green-700"
                     disabled={isLoading}
                   >
@@ -175,10 +126,10 @@ const Login = () => {
                       Or continue with
                     </span>
                   </div>
-                  <Button 
+                  <Button
                     type="button"
-                    variant="outline" 
-                    className="w-full" 
+                    variant="outline"
+                    className="w-full"
                     onClick={handleGoogleSignIn}
                     disabled={isLoading}
                   >
@@ -197,7 +148,10 @@ const Login = () => {
                 </div>
                 <div className="text-center text-sm">
                   Don&apos;t have an account?{" "}
-                  <Link to="/signup" className="underline underline-offset-4 text-blue-700">
+                  <Link
+                    to="/signup"
+                    className="underline underline-offset-4 text-blue-700"
+                  >
                     Sign up
                   </Link>
                 </div>

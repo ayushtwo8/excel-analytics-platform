@@ -2,11 +2,11 @@ import React from "react";
 import { Button } from "./ui/button";
 import { LuChartNoAxesCombined } from "react-icons/lu";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/context/AuthContext";
+import { useUserAuth } from "@/context/userAuthContext";
 
 const Navbar = () => {
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
+  const { currentUser } = useUserAuth();
 
   const handleProtectedRoute = (path) => {
     if (!currentUser) {

@@ -1,26 +1,24 @@
-import React, { useState } from "react";
-import { auth } from "@/lib/firebase";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { Label } from "../components/ui/label";
 import { Input } from "../components/ui/input";
 import { LuChartNoAxesCombined } from "react-icons/lu";
+import { useUserAuth } from "@/context/userAuthContext";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const { signUp } = useUserAuth();
   const navigate = useNavigate();
 
   const handleSignup = async (e) => {
     e.preventDefault();
     setError("");
-
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
+      await signUp(email, password);
       navigate("/dashboard");
-      
     } catch (error) {
       console.error("Error signing up:", error);
       setError(`Failed to sign up: ${error.message}`);
@@ -29,7 +27,6 @@ const Signup = () => {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-  
       <div className="hidden lg:flex items-center justify-center">
         <img
           src="/signup-illustration.jpg"
@@ -40,12 +37,14 @@ const Signup = () => {
 
       <div className="flex items-center justify-center px-6 py-10 md:px-12">
         <div className="w-full max-w-md space-y-16">
-          
           <a
             href="#"
             className="flex justify-center items-center gap-2 font-bold text-4xl"
           >
-            Welcome to  <span className="flex text-green-800  align-center justify-center items-center"><LuChartNoAxesCombined /> Excelytics</span>
+            Welcome to{" "}
+            <span className="flex text-green-800  align-center justify-center items-center">
+              <LuChartNoAxesCombined /> Excelytics
+            </span>
           </a>
 
           {/* Signup Form */}
@@ -79,12 +78,7 @@ const Signup = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <a
-                    href="#"
-                    className="text-xs text-blue-600 hover:underline underline-offset-4"
-                  >
-                    Forgot your password?
-                  </a>
+                  
                 </div>
                 <Input
                   id="password"
@@ -104,19 +98,15 @@ const Signup = () => {
               </Button>
             </div>
             <p className="text-center text-sm text-gray-600">
-            Already have an account?{" "}
-            <a
-              href="/login"
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              Sign in
-            </a>
-          </p>
-
-           
+              Already have an account?{" "}
+              <a
+                href="/login"
+                className="font-medium text-blue-600 hover:text-blue-500"
+              >
+                Sign in
+              </a>
+            </p>
           </form>
-
-          
         </div>
       </div>
     </div>

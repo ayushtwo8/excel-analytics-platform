@@ -8,12 +8,12 @@ import { LuUpload } from "react-icons/lu";
 import { BarChart2, PieChart, LineChart, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import axios from "axios";
-import { useAuth } from "@/context/AuthContext";
+import { useUserAuth } from "@/context/userAuthContext";
 import Chart from 'chart.js/auto';
 import { toast } from "sonner";
 
 const Visualize = () => {
-  const { user } = useAuth();
+  const { user } = useUserAuth();
   const [selectedFile, setSelectedFile] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [columns, setColumns] = useState([]);
