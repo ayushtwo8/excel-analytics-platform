@@ -10,10 +10,10 @@ import { LuChartNoAxesCombined } from "react-icons/lu";
 import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 
 const navItems = [
-  { path: "/visualize", icon: <FaChartBar />, label: "Visualize" },
-  { path: "/history", icon: <FaHistory />, label: "History" },
-  { path: "/insights", icon: <FaRobot />, label: "Smart Insights" },
-  { path: "/profile", icon: <FaUser />, label: "Profile" },
+  { path: "/dashboard/visualize", icon: <FaChartBar />, label: "Visualize" },
+  { path: "/dashboard/history", icon: <FaHistory />, label: "History" },
+  { path: "/dashboard/insights", icon: <FaRobot />, label: "Smart Insights" },
+  { path: "/dashboard/profile", icon: <FaUser />, label: "Profile" },
 ];
 
 const Sidebar = () => {
