@@ -2,21 +2,6 @@ import react from "react"
 import { Input } from "@/components/ui/input";
 
 const Visualize = () => {
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    const formData = new FormData();
-    formData.append('file', file);
-
-    try {
-      const res = await axios.post('http://localhost:5000/upload', formData);
-      setRawData(res.data.data);
-      setChartData(null); // reset chart if new file is uploaded
-    } catch (error) {
-      console.error('Upload failed:', error);
-    }
-  };
-
   return (
     <div className="p-6 md:p-10 space-y-8">
       {/* Heading */}
