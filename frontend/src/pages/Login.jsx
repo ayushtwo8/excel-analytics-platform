@@ -33,6 +33,8 @@ const Login = () => {
       setIsLoading(false);
       console.error("Error signing up:", error);
       setError(`Failed to sign up: ${error.message}`);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -42,7 +44,6 @@ const Login = () => {
     setIsLoading(true);
     try {
       const { user } = await googleSignIn();
-      console.log("Google user:", user);
       const idToken = await user.getIdToken();
 
       const res = await axios.post(

@@ -1,58 +1,70 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-const FileSchema = new Schema({
-  filename: {
-    type: String,
-    required: true
-  },
-  originalname: {
-    type: String,
-    required: true
-  },
-  filepath: {
-    type: String,
-    required: true
-  },
-  fileUrl: {
-    type: String,
-    required: true
-  },
-  mimetype: String,
-  size: Number,
-  uploadedBy: {
-    type: String,
-    required: true
-  },
-  sheets: [{
-    name: String,
-    columns: [String],
-    rowCount: Number
-  }],
-  charts: [{
-    title: {
+const FileSchema = new Schema(
+  {
+    fileId: {
       type: String,
       required: true,
-      default: 'Untitled Chart'
+      unique: true,
     },
-    type: {
+    filename: {
       type: String,
-      required: true
+      required: true,
     },
-    config: {
-      sheet: String,
-      xAxis: String,
-      yAxis: String,
-      zAxis: String,
-      aggregation: String,
-      filters: mongoose.Schema.Types.Mixed
+    originalname: {
+      type: String,
+      required: true,
     },
-    createdAt: {
-      type: Date,
-      default: Date.now
-    }
-  }]
-}, { timestamps: true });
+    filepath: {
+      type: String,
+      required: true,
+    },
+    fileUrl: {
+      type: String,
+      required: true,
+    },
+    mimetype: String,
+    size: Number,
+    uploadedBy: {
+      type: String,
+      required: true,
+    },
+    sheets: [
+      {
+        name: String,
+        columns: [String],
+        rowCount: Number,
+      },
+    ],
+    charts: [
+      {
+        title: {
+          type: String,
+          required: true,
+          default: "Untitled Chart",
+        },
+        type: {
+          type: String,
+          required: true,
+        },
+        config: {
+          sheet: String,
+          xAxis: String,
+          yAxis: String,
+          zAxis: String,
+          aggregation: String,
+          filters: mongoose.Schema.Types.Mixed,
+        },
+        createdAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+  },
+  { timestamps: true }
+);
 
-const FileModel = mongoose.model('File', FileSchema);
+const FileModel = mongoose.model("File", FileSchema);
 export default FileModel;

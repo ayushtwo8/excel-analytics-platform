@@ -6,7 +6,6 @@ import { useUserAuth } from "@/context/userAuthContext";
 
 const DashboardLayout = () => {
   const { user } = useUserAuth();
-  console.log(user);
   return (
     <div className="flex h-screen overflow-hidden">
       <Sidebar />

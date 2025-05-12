@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import {
   useUserAuth,
@@ -27,10 +27,22 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+function AuthStateTest() {
+  const { user } = useUserAuth();
+  
+  useEffect(() => {
+    console.log("Current auth state:", user ? `Logged in as ${user.email}` : "Not logged in");
+  }, [user]);
+  
+  return null;
+}
+
 const App = () => {
   return (
+    
     <UserAuthContextProvider>
       <BrowserRouter>
+      <AuthStateTest />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
