@@ -15,6 +15,8 @@ import History from "./pages/History";
 import SmartInsights from "./pages/SmartInsights";
 import Profile from "./pages/Profile";
 import ResetPassword from "./components/ResetPassword";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -48,6 +50,8 @@ const App = () => {
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route
             path="/dashboard"
             element={
