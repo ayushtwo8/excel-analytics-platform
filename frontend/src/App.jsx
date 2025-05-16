@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import {
   useUserAuth,
@@ -15,6 +15,8 @@ import History from "./pages/History";
 import SmartInsights from "./pages/SmartInsights";
 import Profile from "./pages/Profile";
 import ResetPassword from "./components/ResetPassword";
+import About from "./pages/About";
+import Contact from "./pages/Contact";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
@@ -27,15 +29,29 @@ const ProtectedRoute = ({ children }) => {
   return children;
 };
 
+function AuthStateTest() {
+  const { user } = useUserAuth();
+  
+  useEffect(() => {
+    console.log("Current auth state:", user ? `Logged in as ${user.email}` : "Not logged in");
+  }, [user]);
+  
+  return null;
+}
+
 const App = () => {
   return (
+    
     <UserAuthContextProvider>
       <BrowserRouter>
+      <AuthStateTest />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/about" element={<About />} />
+          <Route path="/contact" element={<Contact />} />
           <Route
             path="/dashboard"
             element={

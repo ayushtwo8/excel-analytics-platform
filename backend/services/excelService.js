@@ -30,6 +30,7 @@ export const parseExcel = async (filePath) => {
         data: jsonData.slice(0, 50) // Send first 50 rows for preview
       });
     });
+    console.log("Parsing successful")
     
     return sheets;
   } catch (error) {
@@ -41,7 +42,7 @@ export const parseExcel = async (filePath) => {
 // Generate chart data from Excel file
 export const generateChartData = async (filePath, options) => {
   try {
-    const { sheet, chartType, xAxis, yAxis, zAxis, aggregation = 'sum', filters } = options;
+    const { sheet, chartType, xAxis, yAxis, zAxis, aggregation, filters } = options;
     
     console.log('Generating chart with options:', JSON.stringify(options));
     console.log('File path:', filePath);
@@ -367,9 +368,4 @@ const prepare3DChartData = (data, xAxis, yAxis, zAxis) => {
     console.error('Error preparing 3D chart data:', error);
     throw error;
   }
-};
-
-export default {
-  parseExcel,
-  generateChartData
 };

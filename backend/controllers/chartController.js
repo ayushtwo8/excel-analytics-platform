@@ -1,42 +1,43 @@
-import fs from "fs/promises";
 import XLSX from "xlsx";
 import FileModel from "../models/fileModel.js";
 import { generateChartData } from "../services/excelService.js";
 import { isOwner } from "../utils/authHelpers.js";
 import { logError } from "../utils/logger.js";
+import fileStore from "../utils/chartStore.js";
 
 // Generate chart data
 export const generateChart = async (req, res) => {
+  console.log("generateChart called");
+
   try {
     const { fileId } = req.params;
-    const { sheet, chartType, xAxis, yAxis, zAxis, aggregation, title, filters } = req.body;
 
-    if (!sheet || !chartType || !xAxis) {
+    const { sheet, chartType, xAxis, yAxis, zAxis, title, filters, aggregation } = req.body;
+
+    if (!sheet || !chartType || !xAxis || !yAxis) {
       return res.status(400).json({
         success: false,
-        message: "Missing required parameters: sheet, chartType, xAxis",
+        message: "Missing required parameters: sheet, chartType, xAxis, yAxis",
       });
     }
 
-    const file = await FileModel.findById(fileId);
-    if (!file) return res.status(404).json({ success: false, message: "File not found" });
+    // Check if file exists in memory
+    const fileInfo = fileStore.get(fileId);
+    console.log("Requesting fileId:", fileId);
 
-    if (!isOwner(file, req.user.uid)) {
-      return res.status(403).json({ success: false, message: "Unauthorized access" });
+    
+    if (!fileInfo) {
+      return res.status(404).json({ success: false, message: "File not found in memory" });
     }
 
-    try {
-      await fs.access(file.filepath);
-    } catch {
-      return res.status(404).json({ success: false, message: "File not found on disk" });
-    }
+    const { filePath, sheets } = fileInfo;
 
-    const workbook = XLSX.readFile(file.filepath);
+    const workbook = XLSX.readFile(filePath);
     if (!workbook.SheetNames.includes(sheet)) {
       return res.status(400).json({ success: false, message: `Sheet '${sheet}' does not exist` });
     }
 
-    const chartData = await generateChartData(file.filepath, {
+    const chartData = await generateChartData(filePath, {
       sheet,
       chartType,
       xAxis,
@@ -46,36 +47,26 @@ export const generateChart = async (req, res) => {
       filters,
     });
 
-    const chartConfig = {
-      title: title || `${chartType} chart of ${xAxis} vs ${yAxis}`,
-      type: chartType,
-      config: {
-        sheet,
-        xAxis,
-        yAxis,
-        zAxis: zAxis || null,
-        aggregation: aggregation || "sum",
-        filters: filters || [],
-      },
-    };
+    console.log("Chart data generated successfully", chartData);
 
-    await FileModel.updateOne({ _id: fileId }, { $push: { charts: chartConfig } });
-
-    const updatedFile = await FileModel.findById(fileId);
-    const newChartId = updatedFile.charts[updatedFile.charts.length - 1]._id;
-
-    res.status(200).json({ success: true, chartData, chartId: newChartId });
+    res.status(200).json({
+      success: true,
+      chartData,
+    });
   } catch (error) {
     logError("Generate chart error", error);
     res.status(500).json({
       success: false,
-      message: error.message,
+      message: error.message || "Chart generation failed",
     });
   }
 };
 
+
+
 // Get all saved charts for a file
 export const getFileCharts = async (req, res) => {
+  console.log("getFileCharts called");
   try {
     const { fileId } = req.params;
     const file = await FileModel.findById(fileId);
