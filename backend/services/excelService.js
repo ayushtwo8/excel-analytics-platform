@@ -1,7 +1,10 @@
 import XLSX from 'xlsx';
 import path from 'path';
+import fs from 'fs/promises'
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
+import { buffer } from 'stream/consumers';
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -11,7 +14,20 @@ export const parseExcel = async (filePath) => {
   try {
     console.log('Parsing Excel file:', filePath);
     // Read the Excel file
-    const workbook = XLSX.readFile(filePath);
+    
+    let fileDataAsBuffer;
+
+    if(Buffer.isBuffer(filePath)){
+      console.log("parsing from buffer..");
+      fileDataAsBuffer = filePath;
+    } else {
+      console.log('Parsing Excel file from path:', filePath);
+      const fileBuffer = await fs.readFile(filePath);
+      fileDataAsBuffer = await fs.readFile(filePath);
+
+    }
+
+    const workbook = XLSX.read(fileDataAsBuffer, { type: 'buffer'})
     
     // Extract sheet information
     const sheets = [];
@@ -40,15 +56,11 @@ export const parseExcel = async (filePath) => {
 };
 
 // Generate chart data from Excel file
-export const generateChartData = async (filePath, options) => {
+export const generateChartData = async (workbook, options) => {
   try {
-    const { sheet, chartType, xAxis, yAxis, zAxis, aggregation, filters } = options;
-    
-    console.log('Generating chart with options:', JSON.stringify(options));
-    console.log('File path:', filePath);
-    
+    const { sheet, chartType, xAxis, yAxis, zAxis, aggregation, filters, title } = options;
+        
     // Read the Excel file and specific sheet
-    const workbook = XLSX.readFile(filePath);
     
     if (!workbook.SheetNames.includes(sheet)) {
       throw new Error(`Sheet '${sheet}' not found. Available sheets: ${workbook.SheetNames.join(', ')}`);
@@ -130,15 +142,17 @@ export const generateChartData = async (filePath, options) => {
     }
     
     return {
-      chartType,
+      // chartType,
       data: chartData,
       config: {
         sheet,
+        chartType,
         xAxis,
         yAxis,
-        zAxis,
+        zAxis: chartType === '3d' ? zAxis : undefined,
         aggregation,
-        filters
+        filters,
+        title: title || `${chartType} of ${xAxis} vs ${yAxis}`
       }
     };
   } catch (error) {

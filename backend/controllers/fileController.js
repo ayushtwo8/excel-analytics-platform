@@ -1,6 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
-import { v4 as uuidv4 } from "uuid"; // ← Import UUID
+import { v4 as uuidv4 } from "uuid"; 
 import FileModel from "../models/fileModel.js";
 import { parseExcel } from "../services/excelService.js";
 import { getFileUrl } from "../utils/fileHelpers.js";
@@ -10,37 +10,39 @@ import fileStore from "../utils/chartStore.js";
 
 // Upload and parse Excel file
 export const uploadExcel = async (req, res) => {
-  console.log("uploadExcel called");
+  console.log("uploadExcel controller called");
   try {
     if (!req.file) {
-      return res.status(400).json({ success: false, message: "Please upload an Excel file" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Please upload an Excel file" });
     }
 
     const { file } = req;
-    const fileUrl = getFileUrl(req, file.path);
-    const sheets = await parseExcel(file.path);
+    const tempFileId = uuidv4();
 
-    const tempFileId = uuidv4(); 
-    
+    // for preview
+    const sheetsPreview = await parseExcel(file.path);
+
     // Store file info in memory
     fileStore.set(tempFileId, {
       filePath: file.path,
-      sheets
-    });
-
-    console.log("Saving to fileStore with key:", tempFileId);
-
-
-    res.status(200).json({
-      success: true,
-      message: "File uploaded and parsed successfully",
-      fileId: tempFileId, 
-      filePath: file.path,
-      fileUrl,
       originalname: file.originalname,
       mimetype: file.mimetype,
       size: file.size,
-      sheets: sheets.map(({ name, columns, rowCount, data }) => ({
+      sheets: sheetsPreview
+    });
+
+    console.log(`File stored in memory with tempFileId: ${tempFileId}`);
+
+    res.status(200).json({
+      success: true,
+      message: "File uploaded and parsed successfully, ready for chart generation or saving.",
+      tempFileId,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+      sheets: sheetsPreview.map(({ name, columns, rowCount, data }) => ({
         name,
         columns,
         rowCount,
@@ -48,103 +50,161 @@ export const uploadExcel = async (req, res) => {
       })),
     });
   } catch (error) {
-    if (req.file) await fs.unlink(req.file.path).catch(console.error);
-    res.status(500).json({ success: false, message: error.message });
+    logError("Upload excel error", error);
+    if(req.file && req.file.path){
+      await fs.unlink(req.file.path).catch(err => logError("Cleanup unlink error", err));
+    }
+    res.status(500).json({success: false, message: error.message || "File upload processing failed."})
   }
 };
 
-// Save file info to DB (only when confirmed by the user)
-export const saveFileToDB = async (req, res) => {
-  console.log("saveFileToDB called");
-  try {
-    const { fileId } = req.body; // Get fileId from frontend request
+// save file metadata to db, permanently
+export const saveFileToDB = async(req, res) => {
+  console.log("saveFileToDB controlled called");
 
-    // Check if file is in memory
-    const fileInfo = fileStore.get(fileId);
-    if (!fileInfo) {
-      return res.status(404).json({ success: false, message: "File not found in memory" });
+  try{
+    const { tempFileId, originalname, mimetype, size } = req.body;
+
+    if(!tempFileId) {
+      return res.status(400).json({ success: false, message: "tempFileId is required."});
     }
 
-    const { filePath, sheets } = fileInfo;
+    const fileInfoFromStore = fileStore.get(tempFileId);
+    if(!fileInfoFromStore){
+      return res.status(404).json({success: false, message: "File session expired or not found. Please re-upload."});
+    }
+
+    const { filePath, sheets } = fileInfoFromStore;
+
+    const finalOriginalName = originalname || fileInfoFromStore.originalname;
+    const finalMimeType = mimetype || fileInfoFromStore.mimetype;
+    const finalSize = size || fileInfoFromStore.size;
+
+    if (!finalOriginalName || !finalMimeType || !finalSize) {
+        return res.status(400).json({ success: false, message: "Missing file metadata (originalname, mimetype, size)." });
+    }
 
     const fileUrl = getFileUrl(req, filePath);
 
     const newFile = new FileModel({
+        fileId: tempFileId,
       filename: path.basename(filePath),
-      originalname: req.body.originalname,
+      originalname: finalOriginalName,
       filepath: filePath,
       fileUrl,
-      mimetype: req.body.mimetype,
-      size: req.body.size,
+      mimetype: finalMimeType,
+      size: finalSize,
       uploadedBy: req.user.uid,
-      sheets,
-    });
+      sheets: sheets
+    })
 
     await newFile.save();
+    
+    fileStore.delete(tempFileId);
 
-    // Optionally, you can delete the file from memory after saving it to the database
-    fileStore.delete(fileId);
+    console.log(`File metadata saved to DB with ID: ${newFile._id}`);
 
     res.status(201).json({
       success: true,
-      message: "File saved to database",
-      fileId: newFile._id,
-      fileUrl,
+      message: 'File saved permanently to database!',
+      dbFileId: newFile._id,
+      fileUrl: newFile.fileUrl
     });
-  } catch (error) {
-    logError("Error saving file to DB", error);
-    res.status(500).json({ success: false, message: error.message });
+  }catch(error){
+    logError("Save file to DB error", error);
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ success: false, message: `Validation Error: ${error.message}` });
+    }
+    res.status(500).json({ success: false, message: error.message || "Failed to save file to database." });
   }
-};
+}
 
-
-// Get all files of a user
-export const getUserFiles = async (req, res) => {
-  console.log("getUserFiles called");
+export const getUserFiles = async(req, res) => {
+  console.log("getUserFile controlled called");
   try {
-    const files = await FileModel.find({ uploadedBy: req.user.uid })
-      .select("filename originalname fileUrl createdAt sheets")
-      .sort("-createdAt");
+    const files = await FileModel.find({ uploadedBy: req.user.uid})
+      .select("originalname filename fileUrl createdAt sheets._id sheets.name sheets.rowCount")
+      .sort({createdAt: -1});
 
-    res.status(200).json({ success: true, count: files.length, files });
-  } catch (error) {
-    logError("Error getting user files", error);
-    res.status(500).json({ success: false, message: error.message });
+      res.status(200).json({ success: true, count: files.length, files });
+  } catch(error){
+    logError(`Get user files error ${error}`);
+    res.status(500).json({ success: false, message: error.message || "Failed to retrieve user files." });
   }
-};
+}
 
-// Get file by ID
 export const getFileById = async (req, res) => {
-  console.log("getFileById called");
-  try {
-    const file = await FileModel.findById(req.params.fileId);
-    if (!file) return res.status(404).json({ success: false, message: "File not found" });
-    if (!isOwner(file, req.user.uid)) {
-      return res.status(403).json({ success: false, message: "Unauthorized access" });
-    }
-    res.status(200).json({ success: true, file });
-  } catch (error) {
-    logError("Error getting file by ID", error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+  console.log("getFileById controller called");
 
-// Delete file by ID
+  try {
+    const { dbFileId } = req.params;
+    const fileRecord = await FileModel.findById(dbFileId).lean();
+    // const file = await FileModel.findById(dbFileId);
+
+    if(!fileRecord){
+      return res.status(404).json({ success: false, message: "File not found." });
+    }
+
+    if (!isOwner(fileRecord, req.user.uid)) {
+      return res.status(403).json({ success: false, message: "Unauthorized access to this file." });
+    }
+
+    let fileBuffer;
+    try{
+      fileBuffer = await fs.readFile(fileRecord.filepath);
+    } catch(readError){
+      logError(`Physical file not found at path: ${fileRecord.filepath}`, readError);
+      return res.status(404).json({ success: false, message: "File data not found on server, though record exists." });
+    }
+
+    const sheetsWithPreviewData = await parseExcel(fileBuffer);
+    const hydratedSheets = fileRecord.sheets.map(dbSheet => {
+        const previewSheet = sheetsWithPreviewData.find(pSheet => pSheet.name === dbSheet.name);
+        
+        return {
+            ...dbSheet, // Contains _id, name, columns, rowCount from DB
+            data: previewSheet ? previewSheet.data : [], // Add the data rows
+        };
+    });
+
+    const finalFileResponse = {
+      ...fileRecord,
+      sheets: hydratedSheets, // Use the sheets that now include the data
+    };
+
+    res.status(200).json({success: true, file: finalFileResponse});
+  } catch (error) {
+      logError("Get file by Id error", error);
+      res.status(500).json({ success: false, message: error.message || "Failed to retrieve file details." });
+  }
+}
+
 export const deleteFile = async (req, res) => {
-  console.log("deleteFile called");
+  console.log("deleteFile controller called");
+
   try {
-    const file = await FileModel.findById(req.params.fileId);
-    if (!file) return res.status(404).json({ success: false, message: "File not found" });
+    const { dbFileId } = req.params;
+    const file = await FileModel.findById(dbFileId);
+
+    if (!file) {
+      return res.status(404).json({ success: false, message: "File not found." });
+    }
     if (!isOwner(file, req.user.uid)) {
-      return res.status(403).json({ success: false, message: "Unauthorized deletion" });
+      return res.status(403).json({ success: false, message: "Unauthorized to delete this file." });
     }
 
-    await fs.unlink(file.filepath).catch((err) => logError("Physical file deletion failed", err));
-    await FileModel.findByIdAndDelete(file._id);
+    // delete physical file
+    try {
+      await fs.unlink(file.filepath);
+      console.log(`Physical file deleted: ${file.filepath}`);
+    } catch(unlinkError){
+      logError(`Physical file deletion failed for ${file.filepath}`, unlinkError);
+    }
 
-    res.status(200).json({ success: true, message: "File deleted successfully" });
-  } catch (error) {
+    await FileModel.findByIdAndDelete(dbFileId);
+    res.status(200).json({ success: true, message: "File and its metadata deleted successfully." });
+  } catch(error){
     logError("Delete file error", error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(500).json({ success: false, message: error.message || "Failed to delete file." });
   }
-};
+}

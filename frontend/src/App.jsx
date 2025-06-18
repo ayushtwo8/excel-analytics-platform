@@ -64,44 +64,12 @@ const App = () => {
             <Route index element={<Navigate to="visualize" replace />} />
 
             {/* Dashboard child routes */}
+            <Route path="visualize/:dbFileId" element={<Visualize />} />
             <Route path="visualize" element={<Visualize />} />
             <Route path="history" element={<History />} />
             <Route path="insights" element={<SmartInsights />} />
             <Route path="profile" element={<Profile />} />
           </Route>
-
-          <Route
-            path="/dashboard/visualize"
-            element={
-              <ProtectedRoute>
-                <Visualize />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/history"
-            element={
-              <ProtectedRoute>
-                <History />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/insights"
-            element={
-              <ProtectedRoute>
-                <SmartInsights />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/profile"
-            element={
-              <ProtectedRoute>
-                <Profile />
-              </ProtectedRoute>
-            }
-          />
 
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
