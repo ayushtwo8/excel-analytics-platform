@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import {
   useUserAuth,
   UserAuthContextProvider,
@@ -17,13 +17,32 @@ import Profile from "./pages/Profile";
 import ResetPassword from "./components/ResetPassword";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
+import AdminUserManagement from "./pages/admin/AdminUserManagement";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminLayout from "./pages/admin/AdminLayout";
+import AdminRoute from "./routes/adminRoutes";
+import { FaSpinner } from "react-icons/fa";
 
 // Protected route component
 const ProtectedRoute = ({ children }) => {
-  let { user } = useUserAuth();
+  let { user, loading } = useUserAuth();
 
-  if (!user) {
-    return <Navigate to="/login" />;
+  if (loading) {
+    // If we are loading, show a full-screen spinner and do NOT make a decision yet.
+    // This gives onAuthStateChanged time to finish.
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <FaSpinner className="animate-spin text-4xl text-green-600" />
+      </div>
+    );
+  }
+
+  if (user) {
+    // If a user exists, render the children that were passed in.
+    return children; // <-- THE ONLY CHANGE
+  } else {
+    // Redirect if no user.
+    return <Navigate to="/login" replace />;
   }
 
   return children;
@@ -31,20 +50,22 @@ const ProtectedRoute = ({ children }) => {
 
 function AuthStateTest() {
   const { user } = useUserAuth();
-  
+
   useEffect(() => {
-    console.log("Current auth state:", user ? `Logged in as ${user.email}` : "Not logged in");
+    console.log(
+      "Current auth state:",
+      user ? `Logged in as ${user.email}` : "Not logged in"
+    );
   }, [user]);
-  
+
   return null;
 }
 
 const App = () => {
   return (
-    
     <UserAuthContextProvider>
       <BrowserRouter>
-      <AuthStateTest />
+        <AuthStateTest />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
@@ -72,6 +93,15 @@ const App = () => {
           </Route>
 
           <Route path="*" element={<Navigate to="/" replace />} />
+
+          <Route element={<AdminRoute />}>
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<Navigate to="dashboard" replace />} />
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUserManagement />} />
+              {/* <Route path="files" element={<AdminFileManagement />} /> */}
+            </Route>
+          </Route>
         </Routes>
       </BrowserRouter>
     </UserAuthContextProvider>

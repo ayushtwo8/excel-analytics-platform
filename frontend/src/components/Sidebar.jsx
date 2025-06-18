@@ -12,7 +12,6 @@ import { TbLayoutSidebarLeftCollapse } from "react-icons/tb";
 const navItems = [
   { path: "/dashboard/visualize", icon: <FaChartBar size={20} />, label: "Visualize" },
   { path: "/dashboard/history", icon: <FaHistory size={20} />, label: "History" },
-  { path: "/dashboard/insights", icon: <FaRobot size={20} />, label: "Smart Insights" },
   { path: "/dashboard/profile", icon: <FaUser size={20} />, label: "Profile" },
 ];
 

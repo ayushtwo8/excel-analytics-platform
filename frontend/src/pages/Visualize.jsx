@@ -35,7 +35,7 @@ import { Button } from "@/components/ui/button";
 const Visualize = () => {
   const { user } = useUserAuth(); // Assuming user object is available
   const { dbFileId } = useParams(); // Get dbFileId from URL if present
-  console.log(dbFileId);
+  console.log("dbfileid: ",dbFileId);
   const navigate = useNavigate();
 
   // File Upload State
@@ -289,7 +289,7 @@ const handleGetInsights = async () => {
         }
       );
 
-      console.log(response.data);
+
       if (response.data.success) {
         toast.success("File uploaded and parsed successfully!");
         const {
